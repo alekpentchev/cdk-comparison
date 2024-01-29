@@ -17,9 +17,9 @@ class ApiStack(Stack):
         # should be in private subnet
         # should connect to DynamoDb with GatewayVpcEndpoint
         self.lambda_func = _lambda.Function(self, "Function",
-            runtime=_lambda.Runtime.PYTHON_3_8,
-            handler="handler.handler",
-            code=_lambda.Code.from_asset("functions/api_lambda"),
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            handler="lambda_api.handler",
+            code=_lambda.Code.from_asset("functions/lambda_api"),
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
             environment={

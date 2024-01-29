@@ -3,12 +3,13 @@ import os
 
 import boto3
 
+dynamodb = boto3.resource('dynamodb')
+
 def handler(event, context):
     # Specify your DynamoDB table name
     dynamodb_table_name = os.getenv('TABLE_NAME')
 
     # Create a DynamoDB client
-    dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table(dynamodb_table_name)
 
     try:

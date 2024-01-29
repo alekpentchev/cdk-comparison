@@ -5,6 +5,8 @@ from aws_cdk import (
 from aws_cdk.aws_dynamodb import (Table, Attribute, AttributeType)
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_iam as iam
+import aws_cdk.aws_lambda as _lambda
+import aws_cdk.aws_cloudformation as cfn
 from constructs import Construct
 
 class DataStack(Stack):
@@ -22,6 +24,27 @@ class DataStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
         
+        # Lambda function to prefill DynamoDB table with data
+        lambda_prefill = _lambda.Function(
+            self, "LambdaPrefillDynamoDB",
+            runtime=_lambda.Runtime.PYTHON_3_12,
+            handler="lambda_prefill.handler",
+            code=_lambda.Code.from_asset("functions/lambda_prefill"),
+            environment={
+                "TABLE_NAME": self.dynamodb_table.table_name,
+            }
+        )
+
+        # Grant Lambda permissions to interact with DynamoDB
+        self.dynamodb_table.grant_read_write_data(lambda_prefill)
+        
+        # custom resource to invoke lambda function to prefill DynamoDB table
+        custom_resource = cfn.CfnCustomResource(
+            self, "LambdaPrefillCustomResource",
+            service_token=lambda_prefill.function_arn
+        )
+        # make sure custom resource is created after the table
+        custom_resource.node.add_dependency(self.dynamodb_table)
         
         # Configure DynamoDB endpoint in private subnet
         self.dynamo_db_endpoint = vpc.add_gateway_endpoint("DynamoDbEndpoint",
