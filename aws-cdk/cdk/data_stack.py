@@ -12,7 +12,7 @@ from constructs import Construct
 class DataStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, vpc, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-        
+
         # DynamoDB table containing list of medicines
         # table should be in private subnet
         self.dynamodb_table = Table(
@@ -23,7 +23,7 @@ class DataStack(Stack):
             ),
             removal_policy=RemovalPolicy.DESTROY,
         )
-        
+
         # Lambda function to prefill DynamoDB table with data
         lambda_prefill = _lambda.Function(
             self, "LambdaPrefillDynamoDB",
@@ -37,7 +37,7 @@ class DataStack(Stack):
 
         # Grant Lambda permissions to interact with DynamoDB
         self.dynamodb_table.grant_read_write_data(lambda_prefill)
-        
+
         # custom resource to invoke lambda function to prefill DynamoDB table
         custom_resource = cfn.CfnCustomResource(
             self, "LambdaPrefillCustomResource",
@@ -45,7 +45,7 @@ class DataStack(Stack):
         )
         # make sure custom resource is created after the table
         custom_resource.node.add_dependency(self.dynamodb_table)
-        
+
         # Configure DynamoDB endpoint in private subnet
         self.dynamo_db_endpoint = vpc.add_gateway_endpoint("DynamoDbEndpoint",
             service=ec2.GatewayVpcEndpointAwsService.DYNAMODB

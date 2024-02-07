@@ -1,30 +1,28 @@
 #!/usr/bin/env python
-from constructs import Construct
-from cdktf import App, TerraformStack, TerraformOutput
+from cdktf import App
 from cdktf_cdktf_provider_aws.provider import AwsProvider
-from cdktf_cdktf_provider_aws.s3_bucket import S3Bucket
 
-
-class MyStack(TerraformStack):
-    def __init__(self, scope: Construct, id: str):
-        super().__init__(scope, id)
-
-        AwsProvider(self, "AWS",
-                    region="eu-central-1",
-                    shared_config_files=["~/.aws/config", "~/.aws/credentials"],
-                    shared_credentials_files=["~/.aws/credentials"],
-                    profile="alek",
-                    )
-
-        bucket = S3Bucket(self, "terraform-cdk-bucket",
-                          bucket="terraform-cdk-bucket",
-                          )
-        TerraformOutput(self, "bucket_name",
-                        value=bucket.bucket,
-                        )
-
+from stacks.network_stack import NetworkStack
+from stacks.data_stack import DataStack
+from stacks.api_stack import ApiStack
 
 app = App()
-MyStack(app, "terraform-cdk")
 
+def main(app):
+    AwsProvider(app, "AWS",
+                region="eu-central-1",
+                shared_config_files=["~/.aws/config", "~/.aws/credentials"],
+                shared_credentials_files=["~/.aws/credentials"],
+                profile="alek",
+                )
+
+    # web app divided into 3 stacks
+    # 1. Network stack - public and private subnets
+    network_stack = NetworkStack(app, 'terraform-network')
+    # 2. Data stack - DynamoDB table
+    data_stack = DataStack(app, 'terraform-data', network_stack)
+    # 3. API stack - API Gateway and Lambda
+    api_stack = ApiStack(app, 'terraform-api', network_stack, data_stack)
+
+main(app)
 app.synth()
