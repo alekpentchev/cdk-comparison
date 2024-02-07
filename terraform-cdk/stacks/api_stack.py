@@ -4,7 +4,7 @@ import json
 
 from constructs import Construct
 from cdktf_cdktf_provider_aws.provider import AwsProvider
-from cdktf import TerraformStack
+from cdktf import TerraformStack, TerraformVariable
 from imports.aws.api_gateway_rest_api import ApiGatewayRestApi
 from cdktf_cdktf_provider_aws.api_gateway_integration import ApiGatewayIntegration
 from cdktf_cdktf_provider_aws.api_gateway_resource import ApiGatewayResource
@@ -15,10 +15,14 @@ from cdktf_cdktf_provider_aws.api_gateway_deployment import ApiGatewayDeployment
 from cdktf_cdktf_provider_aws.lambda_function import LambdaFunction, LambdaFunctionVpcConfig, LambdaFunctionEnvironment
 from cdktf_cdktf_provider_aws.iam_role import IamRole
 from imports.aws.data_aws_subnets import DataAwsSubnets, DataAwsSubnetsFilter
+from imports.aws.lambda_permission import LambdaPermission
 
 class ApiStack(TerraformStack):
     def __init__(self, scope: Construct, id: str, network_stack, data_stack):
         super().__init__(scope, id)
+
+        account_id = "120732094208"
+        my_region = "eu-central-1"
 
         vpc = network_stack.vpc
         dynamoDBTable = data_stack.dynamodb_table
@@ -112,7 +116,7 @@ class ApiStack(TerraformStack):
             id_=f'${id}-APIGatewayResource',
             rest_api_id=api_gateway.id,
             parent_id=api_gateway.root_resource_id,
-            path_part='$default'
+            path_part='medicine'
         )
 
         api_gateway_method = ApiGatewayMethod(
@@ -122,6 +126,14 @@ class ApiStack(TerraformStack):
             resource_id=api_gateway_resource.id,
             http_method='GET',
             authorization='NONE'
+        )
+
+        LambdaPermission(self, "apigw_lambda",
+            action="lambda:InvokeFunction",
+            function_name=lambda_func.function_name,
+            principal="apigateway.amazonaws.com",
+            source_arn=f"arn:aws:execute-api:{my_region}:{account_id}:{api_gateway.id}/*/{api_gateway_method.http_method}{api_gateway_resource.path}",
+            statement_id="AllowExecutionFromAPIGateway"
         )
 
         # API Gateway integration with Lambda
@@ -161,18 +173,3 @@ class ApiStack(TerraformStack):
             deployment_id=api_gateway_deployment.id,
             stage_name='dev',
         )
-
-        # Allow API Gateway to invoke Lambda function
-        lambda_role.add_override('inline_policy', {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": "lambda:InvokeFunction",
-                    "Resource": lambda_func.arn,
-                    "Principal": {
-                        "Service": "apigateway.amazonaws.com"
-                    }
-                }
-            ]
-        })
