@@ -96,6 +96,7 @@ class ApiStack(TerraformStack):
             role=lambda_role.arn,
             runtime='python3.12',
             handler='lambda_api.handler',
+            timeout=30,
             # TODO: fix the path somehow to be relative
             filename='/Users/pentcha1/Documents/private-projects/cdk-comparison-py/terraform-cdk/functions/lambda_api/lambda_api.py.zip',
             vpc_config=lambda_func_vpc_config,
@@ -111,12 +112,14 @@ class ApiStack(TerraformStack):
             name='Medicine Service'
         )
 
+        path_part = 'medicine'
+
         api_gateway_resource = ApiGatewayResource(
             self,
             id_=f'${id}-APIGatewayResource',
             rest_api_id=api_gateway.id,
             parent_id=api_gateway.root_resource_id,
-            path_part='medicine'
+            path_part=path_part
         )
 
         api_gateway_method = ApiGatewayMethod(
@@ -132,7 +135,7 @@ class ApiStack(TerraformStack):
             action="lambda:InvokeFunction",
             function_name=lambda_func.function_name,
             principal="apigateway.amazonaws.com",
-            source_arn=f"arn:aws:execute-api:{my_region}:{account_id}:{api_gateway.id}/*/{api_gateway_method.http_method}{api_gateway_resource.path}",
+            source_arn=f"arn:aws:execute-api:{my_region}:{account_id}:{api_gateway.id}/*/{api_gateway_method.http_method}/{path_part}",
             statement_id="AllowExecutionFromAPIGateway"
         )
 

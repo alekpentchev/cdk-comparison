@@ -17,6 +17,7 @@ class DataStack(TerraformStack):
         super().__init__(scope, id)
 
         vpc = network_stack.vpc
+        route_table_ids = network_stack.route_table_ids
 
 
         AwsProvider(self, "AWS",
@@ -111,6 +112,7 @@ class DataStack(TerraformStack):
             vpc_id=vpc.vpc_id_output,
             service_name='com.amazonaws.eu-central-1.dynamodb',
             vpc_endpoint_type='Gateway',
+            route_table_ids=route_table_ids,
             depends_on=[self.dynamodb_table]
         )
 
