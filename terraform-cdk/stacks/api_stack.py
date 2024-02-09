@@ -54,7 +54,7 @@ class ApiStack(TerraformStack):
         lambda_role = IamRole(
             self,
             id_=f'${id}-LambdaRole',
-            name='LambdaRole',
+            name='TerraformCDKLambdaAPIRole',
             assume_role_policy='{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}',
             managed_policy_arns=[
                 "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -92,7 +92,7 @@ class ApiStack(TerraformStack):
         lambda_func = LambdaFunction(
             self,
             id_=f'${id}-Function',
-            function_name='Function',
+            function_name='TerraformCDKAPIFunction',
             role=lambda_role.arn,
             runtime='python3.12',
             handler='lambda_api.handler',
@@ -109,7 +109,7 @@ class ApiStack(TerraformStack):
         api_gateway = ApiGatewayRestApi(
             self,
             id_=f'${id}-API',
-            name='Medicine Service'
+            name='Terraform CDK Medicine Service'
         )
 
         path_part = 'medicine'
