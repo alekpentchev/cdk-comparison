@@ -9,7 +9,7 @@ from imports.aws.route_table_association import RouteTableAssociation
 
 
 class NetworkStack(TerraformStack):
-    def __init__(self, scope: Construct, id: str):
+    def __init__(self, scope: Construct, id: str, prefix: str, **kwargs):
         super().__init__(scope, id)
 
         AwsProvider(self, "AWS",
@@ -19,7 +19,7 @@ class NetworkStack(TerraformStack):
                     profile="alek",
                     )
 
-        self.vpc = Vpc(self, "TerraformCDKVPC", name="terraform-cdk-vpc",
+        self.vpc = Vpc(self, f'{prefix}-vpc', name=f'{prefix}-vpc',
             azs = ['eu-central-1a', 'eu-central-1b', 'eu-central-1c'],
             default_security_group_egress=[
                 {
@@ -40,18 +40,18 @@ class NetworkStack(TerraformStack):
         self.route_table_ids = []
 
         for i, config in enumerate(subnet_config):
-            subnet = Subnet(self, f"TerraformCDKSubnet{i + 1}",
+            subnet = Subnet(self, f"{prefix}subnet-{i + 1}",
                 vpc_id=self.vpc.vpc_id_output,
                 cidr_block=config["cidr_block"],
                 availability_zone=config["availability_zone"],
             )
 
             # Create a route table and associate it with the subnet
-            route_table = RouteTable(self, f"TerraformCDKRouteTable{i + 1}",
+            route_table = RouteTable(self, f"{prefix}-routetable-{i + 1}",
                 vpc_id=self.vpc.vpc_id_output
             )
 
-            RouteTableAssociation(self, f"TerraformCDKRouteTableAssociation{i + 1}",
+            RouteTableAssociation(self, f"{prefix}routetable-association-{i + 1}",
                 subnet_id=subnet.id,
                 route_table_id=route_table.id,
             )

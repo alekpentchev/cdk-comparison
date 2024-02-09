@@ -18,7 +18,7 @@ from imports.aws.data_aws_subnets import DataAwsSubnets, DataAwsSubnetsFilter
 from imports.aws.lambda_permission import LambdaPermission
 
 class ApiStack(TerraformStack):
-    def __init__(self, scope: Construct, id: str, network_stack, data_stack):
+    def __init__(self, scope: Construct, id: str, network_stack, data_stack, prefix: str):
         super().__init__(scope, id)
 
         account_id = "120732094208"
@@ -54,7 +54,7 @@ class ApiStack(TerraformStack):
         lambda_role = IamRole(
             self,
             id_=f'${id}-LambdaRole',
-            name='TerraformCDKLambdaAPIRole',
+            name=f'{prefix}-lambda-role',
             assume_role_policy='{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}',
             managed_policy_arns=[
                 "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
@@ -92,7 +92,7 @@ class ApiStack(TerraformStack):
         lambda_func = LambdaFunction(
             self,
             id_=f'${id}-Function',
-            function_name='TerraformCDKAPIFunction',
+            function_name=f'{prefix}-lambda-api',
             role=lambda_role.arn,
             runtime='python3.12',
             handler='lambda_api.handler',
@@ -109,7 +109,7 @@ class ApiStack(TerraformStack):
         api_gateway = ApiGatewayRestApi(
             self,
             id_=f'${id}-API',
-            name='Terraform CDK Medicine Service'
+            name=f'{prefix}-api',
         )
 
         path_part = 'medicine'

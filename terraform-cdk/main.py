@@ -16,13 +16,15 @@ def main(app):
                 profile="alek",
                 )
 
+    prefix = "terraform-cdk-"
+
     # web app divided into 3 stacks
     # 1. Network stack - public and private subnets
-    network_stack = NetworkStack(app, 'terraform-network')
+    network_stack = NetworkStack(app, 'terraform-network', prefix)
     # 2. Data stack - DynamoDB table
-    data_stack = DataStack(app, 'terraform-data', network_stack)
+    data_stack = DataStack(app, 'terraform-data', network_stack, prefix)
     # 3. API stack - API Gateway and Lambda
-    api_stack = ApiStack(app, 'terraform-api', network_stack, data_stack)
+    api_stack = ApiStack(app, 'terraform-api', network_stack, data_stack, prefix)
 
 main(app)
 app.synth()

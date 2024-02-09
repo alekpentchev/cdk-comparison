@@ -13,7 +13,7 @@ from imports.aws.vpc_endpoint import VpcEndpoint
 
 
 class DataStack(TerraformStack):
-    def __init__(self, scope: Construct, id: str, network_stack):
+    def __init__(self, scope: Construct, id: str, network_stack, prefix: str):
         super().__init__(scope, id)
 
         vpc = network_stack.vpc
@@ -33,7 +33,7 @@ class DataStack(TerraformStack):
         self.dynamodb_table = DynamodbTable(
             self,
             id_=f'${id}-medicine',
-            name='terraform-cdk-medicine',
+            name=f'{prefix}medicine',
             billing_mode='PAY_PER_REQUEST',
             hash_key='name',
             attribute=[
@@ -62,7 +62,7 @@ class DataStack(TerraformStack):
         lambda_prefill_role = IamRole(
             self,
             id_=f'${id}-LambdaPrefillDynamoDBRole',
-            name='TerraformCDKLambdaPrefillDynamoDBRole',
+            name=f'{prefix}-lambda-prefill-dynamodb-role',
             assume_role_policy='{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}',
             managed_policy_arns=[
                 "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -83,7 +83,7 @@ class DataStack(TerraformStack):
         lambda_prefill = LambdaFunction(
             self,
             id_=f'${id}-LambdaPrefillDynamoDB',
-            function_name='TerraformCDKLambdaPrefillDynamoDB',
+            function_name=f'{prefix}-lambda-prefill',
             # TODO: fix the path somehow to be relative
             filename='/Users/pentcha1/Documents/private-projects/cdk-comparison-py/terraform-cdk/functions/lambda_prefill/lambda_prefill.py.zip',
             handler='lambda_prefill.handler',

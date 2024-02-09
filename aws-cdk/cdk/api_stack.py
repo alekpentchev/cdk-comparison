@@ -10,13 +10,13 @@ from aws_cdk.aws_lambda import IFunction
 from constructs import Construct
 
 class ApiStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, vpc, dynamoDBTable, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, vpc, dynamoDBTable, prefix: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-        
+
         # Lambda function to get list of medicines
         # should be in private subnet
         # should connect to DynamoDb with GatewayVpcEndpoint
-        self.lambda_func = _lambda.Function(self, "Function",
+        self.lambda_func = _lambda.Function(self, f'{prefix}-lambda-api',
             runtime=_lambda.Runtime.PYTHON_3_12,
             handler="lambda_api.handler",
             code=_lambda.Code.from_asset("functions/lambda_api"),
@@ -26,15 +26,15 @@ class ApiStack(Stack):
                 'TABLE_NAME': dynamoDBTable.table_name
             }
         )
-                
+
         # Allow Lambda to read from DynamoDB
         dynamoDBTable.grant_read_data(self.lambda_func)
-        
+
         # API Gateway
         # should be in public subnet
         # should connect to Lambda with VpcLink
-        self.api_gateway = apigateway.RestApi(self, "API",
-            rest_api_name="Medicine Service",
+        self.api_gateway = apigateway.RestApi(self, f'{prefix}-api-gateway',
+            rest_api_name="AWS CDK Medicine Service",
             description="This service serves medicines.",
             endpoint_types=[apigateway.EndpointType.REGIONAL],
             deploy_options=apigateway.StageOptions(
@@ -42,7 +42,7 @@ class ApiStack(Stack):
                 data_trace_enabled=True
             )
         )
-        
+
         # API Gateway integration with Lambda
         # ERROR: strange type error for handler expecting IFunction and getting Function
         self.api_gateway_integration = apigateway.LambdaIntegration(
@@ -56,7 +56,7 @@ class ApiStack(Stack):
                 }
             }]
         )
-        
+
         # API Gateway method
         self.api_gateway_resource = self.api_gateway.root.add_resource("medicine")
         self.api_gateway_method = self.api_gateway_resource.add_method("GET",
@@ -65,7 +65,7 @@ class ApiStack(Stack):
                 'method.request.querystring.name': True
             }
         )
-        
+
         # API Gateway method response
         self.api_gateway_method_response = self.api_gateway_method.add_method_response(
             status_code='200',
@@ -74,7 +74,7 @@ class ApiStack(Stack):
                 'method.response.header.Access-Control-Allow-Credentials': True
             }
         )
-        
+
         # Allow only API Gateway to invoke Lambda
         self.lambda_func.add_permission("Permission",
             principal=iam.ServicePrincipal("apigateway.amazonaws.com"),
