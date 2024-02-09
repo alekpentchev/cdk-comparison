@@ -20,7 +20,15 @@ class NetworkStack(TerraformStack):
                     )
 
         self.vpc = Vpc(self, "MyVPC",
-            azs = ['eu-central-1a', 'eu-central-1b', 'eu-central-1c']
+            azs = ['eu-central-1a', 'eu-central-1b', 'eu-central-1c'],
+            default_security_group_egress=[
+                {
+                    "from_port":"0",
+                    "to_port": "0",
+                    "protocol": "-1",
+                    "cidr_blocks": "0.0.0.0/0"
+                }
+            ]
         )
 
         subnet_config = [
@@ -40,7 +48,7 @@ class NetworkStack(TerraformStack):
 
             # Create a route table and associate it with the subnet
             route_table = RouteTable(self, f"MyRouteTable{i + 1}",
-                vpc_id=self.vpc.vpc_id_output,
+                vpc_id=self.vpc.vpc_id_output
             )
 
             RouteTableAssociation(self, f"MyRouteTableAssociation{i + 1}",
